@@ -1,0 +1,68 @@
+TORSO_MODEL_DIR = 'D:\ARVC meshing automatic\patients\patient02\chaste_ernesto\';
+H0 = read_VTK( fullfile( TORSO_MODEL_DIR , 'HEART_with_UPS_louie.vtk' ) ); %this is louie's heart!
+
+LV0_roots = [ 157258 , 129516 , 140114 , 131341 ];
+RV0_roots = [ 198857 , 209309 , 186671 ];
+
+LV0_alt_roots = [2012680,623088,983785,2359613];
+RV0_alt_roots = [1396217, 1226484, 2333921];
+
+LV0_roots = LV0_alt_roots;
+RV0_roots = RV0_alt_roots;
+
+
+plotMESH( H0 , 'ne' );
+hplot3d( H0.xyz( LV0_roots ,:) , 'o1kb20' );
+hplot3d( H0.xyz( RV0_roots ,:) , 'o1kr20' );
+headlight
+
+
+%%
+
+H1 = read_VTK(  'D:\ARVC meshing automatic\patients\patient02\HEART.vtk'); %our target heart
+
+plotMESH( H0 ,'ne');
+hplotMESH( H1 , 'ne' ,'FaceColor',[1 1 1]*0.6)
+headlight; axis(objbounds);
+
+HD_loaded = load('Z:\Dropbox\patients\HD.mat');
+
+%%
+
+u = loadv( 'D:\ARVC meshing automatic\patients\patient02\chaste_ernesto\Hmapping' , 'u' ); %transfer matrix u
+%this is a function converting coordinates from H0 to H1
+
+if 0
+HD = H0;
+HD.xyz = u( HD.xyz );
+
+plotMESH( HD ,'ne');
+hplotMESH( H1 , 'ne' ,'FaceColor',[1 1 1]*0.6)
+headlight; axis(objbounds);
+end
+
+
+%%
+
+LV1_roots = vtkClosestPoint( Mesh(H1) , u( H0.xyz( LV0_roots ,:) ) );
+RV1_roots = vtkClosestPoint( Mesh(H1) , u( H0.xyz( RV0_roots ,:) ) );
+
+
+LV1_roots  = [285360;;258677;237850];
+RV1_roots = [376214;399978;355734];
+
+joined_roots = vertcat(LV1_roots,RV1_roots);
+
+
+permutation = load('D:\sim3d\patient02\permutation.txt');
+%the rows in the permutation file correspond to the index in chaste and t
+%the number in the cell corresponds to the vtk ordering!
+
+for i=1:size(joined_roots)
+    roots_chaste(i) = find(permutation ==joined_roots(i));
+end
+
+plotMESH( H1 , 'ne' );
+hplot3d( H1.xyz( LV1_roots ,:) , 'o1kb20' );
+hplot3d( H1.xyz( RV1_roots ,:) , 'o1kr20' );
+headlight;
